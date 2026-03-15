@@ -6,16 +6,19 @@ RUN apk add wget
 # Get rclone executable
 RUN if [ "$TARGETPLATFORM" = "linux/amd64" ]; then \
         wget https://downloads.rclone.org/rclone-current-linux-amd64.zip && unzip rclone-current-linux-amd64.zip && mv rclone-*-linux-amd64/rclone /bin/rclone && chmod +x /bin/rclone; \
-    elif [ "$TARGETPLATFORM" = "linux/arm64" ]; then \
+    elif [ "$TARGETPLATFORM" = "linux/arm64" ] || [ "$TARGETPLATFORM" = "linux/arm64/v8" ]; then \
         wget https://downloads.rclone.org/rclone-current-linux-arm64.zip && unzip rclone-current-linux-arm64.zip && mv rclone-*-linux-arm64/rclone /bin/rclone && chmod +x /bin/rclone; \
     elif [ "$TARGETPLATFORM" = "linux/arm/v7" ]; then \
         wget https://downloads.rclone.org/rclone-current-linux-arm-v7.zip && unzip rclone-current-linux-arm-v7.zip && mv rclone-*-linux-arm-v7/rclone /bin/rclone && chmod +x /bin/rclone; \
+    else \
+        echo "Unsupported platform: $TARGETPLATFORM" && exit 1; \
     fi
 
 
 FROM docker.io/restic/restic:0.18.0
 
-RUN apk add --update --no-cache curl mailx shadow
+RUN apk add --update --no-cache curl mailx shadow docker-cli && \
+    apk add --update --no-cache postgresql18-client --repository=https://dl-cdn.alpinelinux.org/alpine/edge/main
 
 COPY --from=rclone /bin/rclone /bin/rclone
 
